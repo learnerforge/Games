@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-theme-bg: var(--theme-bg);
+  --color-theme-bg-secondary: var(--theme-bg-secondary);
+  --color-theme-bg-card: var(--theme-bg-card);
+  --color-theme-text: var(--theme-text);
+  --color-theme-text-secondary: var(--theme-text-secondary);
+  --color-theme-primary: var(--theme-primary);
+  --color-theme-primary-hover: var(--theme-primary-hover);
+  --color-theme-accent: var(--theme-accent);
+  --color-theme-border: var(--theme-border);
+  --color-theme-success: var(--theme-success);
+  --color-theme-danger: var(--theme-danger);
+}
+
+:root,
+[data-theme="dark"] {
+  --theme-bg: #0f172a;
+  --theme-bg-secondary: #1e293b;
+  --theme-bg-card: #1e293b;
+  --theme-text: #f1f5f9;
+  --theme-text-secondary: #94a3b8;
+  --theme-primary: #6366f1;
+  --theme-primary-hover: #818cf8;
+  --theme-accent: #ec4899;
+  --theme-border: #334155;
+  --theme-success: #22c55e;
+  --theme-danger: #ef4444;
+}
+
+[data-theme="blue"] {
+  --theme-bg: #e0f2fe;
+  --theme-bg-secondary: #f0f9ff;
+  --theme-bg-card: #ffffff;
+  --theme-text: #0c4a6e;
+  --theme-text-secondary: #64748b;
+  --theme-primary: #0284c7;
+  --theme-primary-hover: #0369a1;
+  --theme-accent: #0891b2;
+  --theme-border: #bae6fd;
+  --theme-success: #16a34a;
+  --theme-danger: #dc2626;
+}
+
+[data-theme="dust"] {
+  --theme-bg: #292524;
+  --theme-bg-secondary: #44403c;
+  --theme-bg-card: #57534e;
+  --theme-text: #fafaf9;
+  --theme-text-secondary: #a8a29e;
+  --theme-primary: #d97706;
+  --theme-primary-hover: #f59e0b;
+  --theme-accent: #ea580c;
+  --theme-border: #78716c;
+  --theme-success: #65a30d;
+  --theme-danger: #ef4444;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  transition: background 0.3s, color 0.3s;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .game-area {
+    touch-action: none;
+  }
+}

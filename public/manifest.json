@@ -1,0 +1,12 @@
+{
+  "name": "PlayRoads Arena",
+  "short_name": "PlayRoads",
+  "description": "A web-only mini-games platform with instant browser games",
+  "start_url": "/Games/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/Games/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
