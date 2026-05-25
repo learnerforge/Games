@@ -43,7 +43,7 @@ export default function ConnectFour() {
           b[row][col] = turn
           if (checkWin(b, row, col, turn)) {
             setWinner(turn)
-            addScore('connectfour', { player: loadData().playerName, player2: 'Player 2', score: turn === 1 ? 10 : 5, date: new Date().toISOString(), mode: '2p' })
+            addScore('connectfour', { player: loadData().playerName, score: turn === 1 ? 10 : 5, date: new Date().toISOString(), mode: '2p' })
           } else if (b.every(r => r.every(c => c !== null))) {
             setWinner('draw')
           }

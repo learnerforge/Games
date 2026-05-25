@@ -3,7 +3,8 @@ import type { ScoreEntry } from '../types'
 import { saveScore, getScores, getTopScore, clearAllScores } from '../utils/storage'
 
 interface GameContextValue {
-  addScore: (gameSlug: string, entry: ScoreEntry) => void
+  addScore: (gameSlug: string, entry: { player: string; score: number; date: string; mode: string }) => void
+  addScoreEntry: (entry: ScoreEntry) => void
   getScoresForGame: (gameSlug: string) => ScoreEntry[]
   getBestScore: (gameSlug: string) => number
   resetAllScores: () => void
@@ -12,6 +13,7 @@ interface GameContextValue {
 
 const GameContext = createContext<GameContextValue>({
   addScore: () => {},
+  addScoreEntry: () => {},
   getScoresForGame: () => [],
   getBestScore: () => 0,
   resetAllScores: () => {},
@@ -21,8 +23,24 @@ const GameContext = createContext<GameContextValue>({
 export function GameProvider({ children }: { children: ReactNode }) {
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const addScore = (gameSlug: string, entry: ScoreEntry) => {
-    saveScore(gameSlug, entry)
+  const addScore = (gameSlug: string, entry: { player: string; score: number; date: string; mode: string }) => {
+    const full: ScoreEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      gameSlug,
+      gameTitle: gameSlug,
+      playerName: entry.player,
+      score: entry.score,
+      moves: 0,
+      gridSize: 0,
+      targetNumber: 0,
+      createdAt: entry.date,
+    }
+    saveScore(full)
+    setRefreshKey(k => k + 1)
+  }
+
+  const addScoreEntry = (entry: ScoreEntry) => {
+    saveScore(entry)
     setRefreshKey(k => k + 1)
   }
 
@@ -35,7 +53,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <GameContext.Provider value={{ addScore, getScoresForGame, getBestScore, resetAllScores, refreshKey }}>
+    <GameContext.Provider value={{ addScore, addScoreEntry, getScoresForGame, getBestScore, resetAllScores, refreshKey }}>
       {children}
     </GameContext.Provider>
   )

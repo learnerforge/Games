@@ -83,6 +83,15 @@ function renderField(field: ConfigField, value: unknown, onChange: (v: unknown) 
           <span className="text-xs text-theme-text-secondary font-mono">{String(value)}</span>
         </div>
       )
+    case 'text':
+      return (
+        <input
+          type="text"
+          value={String(value)}
+          onChange={e => onChange(e.target.value)}
+          className="w-full px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-sm focus:outline-none focus:border-theme-primary"
+        />
+      )
     case 'select':
       return (
         <select

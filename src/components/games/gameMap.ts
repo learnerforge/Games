@@ -24,6 +24,6 @@ const componentMap: GameComponentMap = {
   typingtest: TypingTest,
 }
 
-export function getGameComponent(key: string): ComponentType<{ config: Record<string, unknown> }> | null {
+export function getGameComponent(key: string): ComponentType<{ config: Record<string, unknown>; onScore?: (score: number) => void }> | null {
   return componentMap[key] || null
 }

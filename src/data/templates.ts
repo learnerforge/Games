@@ -58,9 +58,16 @@ const typingSchema: ConfigField[] = [
 ]
 
 const game2048Schema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Classic 2048' },
   { key: 'gridSize', label: 'Grid Size', type: 'select', defaultValue: 4, options: [{ label: '3×3', value: 3 }, { label: '4×4', value: 4 }, { label: '5×5', value: 5 }, { label: '6×6', value: 6 }] },
-  { key: 'targetNumber', label: 'Target', type: 'select', defaultValue: 2048, options: [{ label: '512', value: 512 }, { label: '1024', value: 1024 }, { label: '2048', value: 2048 }, { label: '4096', value: 4096 }] },
-  { key: 'tileStyle', label: 'Tile Style', type: 'select', defaultValue: 'default', options: [{ label: 'Default', value: 'default' }, { label: 'Neon', value: 'neon' }, { label: 'Pastel', value: 'pastel' }] },
+  { key: 'targetNumber', label: 'Target Number', type: 'select', defaultValue: 2048, options: [{ label: '512', value: 512 }, { label: '1024', value: 1024 }, { label: '2048', value: 2048 }, { label: '4096', value: 4096 }, { label: '8192', value: 8192 }] },
+  { key: 'startingTiles', label: 'Starting Tiles', type: 'select', defaultValue: 2, options: [{ label: '1 tile', value: 1 }, { label: '2 tiles', value: 2 }, { label: '3 tiles', value: 3 }] },
+  { key: 'tileStyle', label: 'Tile Style', type: 'select', defaultValue: 'classic', options: [{ label: 'Classic', value: 'classic' }, { label: 'Neon', value: 'neon' }, { label: 'Pastel', value: 'pastel' }, { label: 'Minimal', value: 'minimal' }, { label: 'Dust', value: 'dust' }] },
+  { key: 'boardColor', label: 'Board Color', type: 'color', defaultValue: '#bbada0' },
+  { key: 'emptyCellColor', label: 'Empty Cell Color', type: 'color', defaultValue: '#cdc1b4' },
+  { key: 'tileTextColor', label: 'Tile Text Color', type: 'color', defaultValue: '#f9f6f2' },
+  { key: 'animationSpeed', label: 'Animation Speed', type: 'select', defaultValue: 'normal', options: [{ label: 'Slow', value: 'slow' }, { label: 'Normal', value: 'normal' }, { label: 'Fast', value: 'fast' }] },
+  { key: 'difficulty', label: 'Difficulty', type: 'select', defaultValue: 'normal', options: [{ label: 'Easy', value: 'easy' }, { label: 'Normal', value: 'normal' }, { label: 'Hard', value: 'hard' }] },
 ]
 
 const snakeTemplate: GameTemplate = {
@@ -165,7 +172,7 @@ const typingTemplate: GameTemplate = {
 const game2048Template: GameTemplate = {
   slug: 'game2048',
   title: '2048',
-  description: 'Customize grid size, target, and tile style.',
+  description: 'Create your own custom 2048 puzzle with different grid sizes, themes, targets, and difficulty.',
   icon: '🔢',
   category: 'puzzle',
   componentKey: 'game2048',

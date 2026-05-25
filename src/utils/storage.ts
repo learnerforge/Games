@@ -1,60 +1,68 @@
-import type { StorageData, Theme, ScoreEntry } from '../types'
+import type { Theme, ScoreEntry, SavedGame } from '../types'
 
-const STORAGE_KEY = 'playroads-data'
+const KEYS = {
+  root: 'playroads-data',
+  best2048: 'playroads-2048-best',
+} as const
 
-function getDefaultData(): StorageData {
-  return {
-    playerName: 'Player',
-    theme: 'dark',
-    scores: {},
-  }
+interface RawData {
+  playerName: string
+  theme: Theme
+  scores: ScoreEntry[]
+  savedGames: SavedGame[]
 }
 
-export function loadData(): StorageData {
+function defaults(): RawData {
+  return { playerName: 'Player', theme: 'dark', scores: [], savedGames: [] }
+}
+
+function loadRaw(): RawData {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return getDefaultData()
-    const data = JSON.parse(raw) as StorageData
+    const raw = localStorage.getItem(KEYS.root)
+    if (!raw) return defaults()
+    const d = JSON.parse(raw)
     return {
-      playerName: data.playerName || 'Player',
-      theme: data.theme || 'dark',
-      scores: data.scores || {},
+      playerName: d.playerName || 'Player',
+      theme: d.theme || 'dark',
+      scores: Array.isArray(d.scores) ? d.scores : [],
+      savedGames: Array.isArray(d.savedGames) ? d.savedGames : [],
     }
-  } catch {
-    return getDefaultData()
-  }
+  } catch { return defaults() }
 }
 
-export function saveData(data: StorageData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+function saveRaw(d: RawData): void {
+  localStorage.setItem(KEYS.root, JSON.stringify(d))
+}
+
+export function loadData(): { playerName: string; theme: Theme } {
+  const d = loadRaw()
+  return { playerName: d.playerName, theme: d.theme }
 }
 
 export function saveTheme(theme: Theme): void {
-  const data = loadData()
-  data.theme = theme
-  saveData(data)
+  const d = loadRaw()
+  d.theme = theme
+  saveRaw(d)
 }
 
 export function savePlayerName(name: string): void {
-  const data = loadData()
-  data.playerName = name
-  saveData(data)
+  const d = loadRaw()
+  d.playerName = name
+  saveRaw(d)
 }
 
-export function saveScore(gameSlug: string, entry: ScoreEntry): void {
-  const data = loadData()
-  if (!data.scores[gameSlug]) data.scores[gameSlug] = []
-  data.scores[gameSlug].push(entry)
-  data.scores[gameSlug].sort((a, b) => b.score - a.score)
-  if (data.scores[gameSlug].length > 100) {
-    data.scores[gameSlug] = data.scores[gameSlug].slice(0, 100)
-  }
-  saveData(data)
+export function saveScore(entry: ScoreEntry): void {
+  const d = loadRaw()
+  d.scores.push(entry)
+  d.scores.sort((a, b) => b.score - a.score)
+  if (d.scores.length > 200) d.scores = d.scores.slice(0, 200)
+  saveRaw(d)
 }
 
-export function getScores(gameSlug: string): ScoreEntry[] {
-  const data = loadData()
-  return data.scores[gameSlug] || []
+export function getScores(gameSlug?: string): ScoreEntry[] {
+  const d = loadRaw()
+  if (gameSlug) return d.scores.filter(s => s.gameSlug === gameSlug)
+  return d.scores
 }
 
 export function getTopScore(gameSlug: string): number {
@@ -63,7 +71,37 @@ export function getTopScore(gameSlug: string): number {
 }
 
 export function clearAllScores(): void {
-  const data = loadData()
-  data.scores = {}
-  saveData(data)
+  const d = loadRaw()
+  d.scores = []
+  saveRaw(d)
+  try { localStorage.removeItem(KEYS.best2048) } catch {}
+}
+
+export function addSavedGame(game: SavedGame): void {
+  const d = loadRaw()
+  d.savedGames.unshift(game)
+  if (d.savedGames.length > 50) d.savedGames = d.savedGames.slice(0, 50)
+  saveRaw(d)
+}
+
+export function removeSavedGame(id: string): void {
+  const d = loadRaw()
+  d.savedGames = d.savedGames.filter(g => g.id !== id)
+  saveRaw(d)
+}
+
+export function getSavedGames(): SavedGame[] {
+  return loadRaw().savedGames
+}
+
+export function updateSavedGame(id: string, updates: Partial<SavedGame>): void {
+  const d = loadRaw()
+  const idx = d.savedGames.findIndex(g => g.id === id)
+  if (idx === -1) return
+  d.savedGames[idx] = { ...d.savedGames[idx], ...updates, updatedAt: new Date().toISOString() }
+  saveRaw(d)
+}
+
+export function getBest2048Score(): number {
+  try { return Number(localStorage.getItem(KEYS.best2048) || '0') } catch { return 0 }
 }

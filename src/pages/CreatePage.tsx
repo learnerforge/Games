@@ -31,17 +31,17 @@ function CreateForm({ template }: { template: GameTemplate }) {
 
   const updateConfig = useCallback((key: string, value: unknown) => {
     setConfig(prev => ({ ...prev, [key]: value }))
+    if (key === 'title' && typeof value === 'string') {
+      setGameName(`${value} Custom`)
+    }
   }, [])
 
   const GameComponent = getGameComponent(template.componentKey)
-
   const shareUrl = `${window.location.origin}/Games/#/play/${template.slug}?c=${encodeConfig(config)}`
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     } catch {
       const input = document.createElement('input')
       input.value = shareUrl
@@ -49,18 +49,19 @@ function CreateForm({ template }: { template: GameTemplate }) {
       input.select()
       document.execCommand('copy')
       document.body.removeChild(input)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleSave = () => {
     addSavedGame({
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       templateSlug: template.slug,
-      name: gameName.trim() || `${template.title} Custom`,
+      title: gameName.trim() || `${template.title} Custom`,
       config: { ...config },
-      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -80,8 +81,8 @@ function CreateForm({ template }: { template: GameTemplate }) {
               <GameComponent config={config} />
             ) : (
               <div className="text-center py-10 text-theme-text-secondary">
-                <p className="text-lg mb-2">Preview</p>
-                <p>Configure the settings and see the live preview here.</p>
+                <p className="text-lg mb-2">Live Preview</p>
+                <p>Configure settings on the right to see your game.</p>
               </div>
             )}
           </div>
@@ -94,7 +95,7 @@ function CreateForm({ template }: { template: GameTemplate }) {
 
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-theme-text-secondary block mb-1">Game Name</label>
+              <label className="text-xs text-theme-text-secondary block mb-1">Save Name</label>
               <input
                 type="text"
                 value={gameName}
@@ -104,17 +105,11 @@ function CreateForm({ template }: { template: GameTemplate }) {
               />
             </div>
 
-            <button
-              onClick={handleCopy}
-              className="touch-button w-full px-4 py-2.5 rounded-lg bg-theme-primary text-white text-sm font-medium hover:bg-theme-primary-hover transition-colors"
-            >
+            <button onClick={handleCopy} className="touch-button w-full px-4 py-2.5 rounded-lg bg-theme-primary text-white text-sm font-medium hover:bg-theme-primary-hover transition-colors">
               {copied ? '✓ Link Copied!' : '📋 Copy Share Link'}
             </button>
 
-            <button
-              onClick={handleSave}
-              className="touch-button w-full px-4 py-2.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-sm hover:border-theme-primary transition-colors"
-            >
+            <button onClick={handleSave} className="touch-button w-full px-4 py-2.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-sm hover:border-theme-primary transition-colors">
               {saved ? '✓ Saved!' : '💾 Save Locally'}
             </button>
           </div>

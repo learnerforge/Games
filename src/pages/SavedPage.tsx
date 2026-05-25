@@ -3,20 +3,13 @@ import { Link } from 'react-router-dom'
 import { TEMPLATES } from '../data/templates'
 import { getSavedGames, removeSavedGame } from '../utils/storage'
 import { encodeConfig } from '../utils/configCodec'
-import { useGame } from '../context/GameContext'
 
 export default function SavedPage() {
-  const { refreshKey } = useGame()
   const [games, setGames] = useState(() => getSavedGames())
-  // Force refresh when navigating back
-  void refreshKey
 
   const handleDelete = (id: string) => {
+    if (!window.confirm('Delete this saved game?')) return
     removeSavedGame(id)
-    setGames(getSavedGames())
-  }
-
-  const handleRefresh = () => {
     setGames(getSavedGames())
   }
 
@@ -24,10 +17,7 @@ export default function SavedPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-theme-text">Saved Games</h1>
-        <button
-          onClick={handleRefresh}
-          className="touch-button text-sm px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text hover:border-theme-primary transition-colors"
-        >
+        <button onClick={() => setGames(getSavedGames())} className="touch-button text-sm px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text hover:border-theme-primary transition-colors">
           Refresh
         </button>
       </div>
@@ -46,21 +36,18 @@ export default function SavedPage() {
             return (
               <div key={game.id} className="bg-theme-bg-card border border-theme-border rounded-xl p-4">
                 <div className="text-2xl mb-2">{template?.icon || '🎮'}</div>
-                <h3 className="text-base font-semibold text-theme-text mb-1">{game.name}</h3>
+                <h3 className="text-base font-semibold text-theme-text mb-1">{game.title}</h3>
                 <p className="text-xs text-theme-text-secondary mb-1">{template?.title || game.templateSlug}</p>
-                <p className="text-xs text-theme-text-secondary mb-3">{new Date(game.date).toLocaleDateString()}</p>
+                <p className="text-xs text-theme-text-secondary mb-3">Saved {new Date(game.createdAt).toLocaleDateString()}</p>
                 <div className="flex gap-2">
-                  <Link
-                    to={url}
-                    className="touch-button flex-1 text-center px-3 py-1.5 rounded-lg bg-theme-primary text-white text-xs font-medium hover:bg-theme-primary-hover transition-colors no-underline"
-                  >
+                  <a href={url} className="touch-button flex-1 text-center px-3 py-1.5 rounded-lg bg-theme-primary text-white text-xs font-medium hover:bg-theme-primary-hover transition-colors no-underline">
                     Play
+                  </a>
+                  <Link to={`/create/${game.templateSlug}`} state={{ config: game.config }} className="touch-button px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-xs hover:border-theme-primary transition-colors no-underline">
+                    Edit
                   </Link>
-                  <button
-                    onClick={() => handleDelete(game.id)}
-                    className="touch-button px-3 py-1.5 rounded-lg bg-theme-danger/10 text-theme-danger border border-theme-danger/30 text-xs hover:bg-theme-danger/20 transition-colors"
-                  >
-                    Delete
+                  <button onClick={() => handleDelete(game.id)} className="touch-button px-3 py-1.5 rounded-lg bg-theme-danger/10 text-theme-danger border border-theme-danger/30 text-xs hover:bg-theme-danger/20 transition-colors">
+                    Del
                   </button>
                 </div>
               </div>

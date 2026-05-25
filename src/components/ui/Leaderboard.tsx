@@ -32,9 +32,9 @@ export default function Leaderboard({ gameSlug, compact }: LeaderboardProps) {
           </thead>
           <tbody>
             {display.map((entry, i) => (
-              <tr key={i} className={`border-b border-theme-border/50 ${entry.player === playerName ? 'text-theme-primary font-medium' : 'text-theme-text'}`}>
+              <tr key={i} className={`border-b border-theme-border/50 ${entry.playerName === playerName ? 'text-theme-primary font-medium' : 'text-theme-text'}`}>
                 <td className="py-2 pr-2 text-theme-text-secondary">{i + 1}</td>
-                <td className="py-2 pr-2">{entry.player}</td>
+                <td className="py-2 pr-2">{entry.playerName}</td>
                 <td className="py-2 text-right">{entry.score}</td>
               </tr>
             ))}

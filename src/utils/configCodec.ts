@@ -50,6 +50,10 @@ export function validateConfig(
         }
         break
       }
+      case 'text': {
+        result[field.key] = String(value)
+        break
+      }
       case 'toggle': {
         result[field.key] = value === true || value === 'true'
         break
