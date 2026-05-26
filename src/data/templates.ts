@@ -180,6 +180,38 @@ const game2048Template: GameTemplate = {
   defaultConfig: game2048Schema.reduce((acc, f) => ({ ...acc, [f.key]: f.defaultValue }), {}),
 }
 
+const sosSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'SOS' },
+  { key: 'gridSize', label: 'Grid Size', type: 'select', defaultValue: 8, options: [
+    { label: '5×5', value: 5 }, { label: '6×6', value: 6 }, { label: '7×7', value: 7 },
+    { label: '8×8', value: 8 }, { label: '9×9', value: 9 }, { label: '10×10', value: 10 },
+    { label: '11×11', value: 11 }, { label: '12×12', value: 12 },
+  ]},
+  { key: 'winCondition', label: 'Win Condition', type: 'select', defaultValue: 'full', options: [
+    { label: 'Most points when board full', value: 'full' },
+    { label: 'First to target points', value: 'points' },
+  ]},
+  { key: 'pointsToWin', label: 'Points to Win', type: 'slider', defaultValue: 10, min: 3, max: 25, step: 1, description: 'Only used when win condition is "First to target points"' },
+  { key: 'player1Label', label: 'Player 1 Name', type: 'text', defaultValue: 'Player 1' },
+  { key: 'player2Label', label: 'Player 2 Name', type: 'text', defaultValue: 'Player 2' },
+  { key: 'boardColor', label: 'Board Color', type: 'color', defaultValue: '#1e293b' },
+  { key: 'cellColor', label: 'Cell Color', type: 'color', defaultValue: '#334155' },
+  { key: 'lineColor', label: 'Grid Line Color', type: 'color', defaultValue: '#475569' },
+  { key: 'textColor', label: 'Text Color', type: 'color', defaultValue: '#f1f5f9' },
+  { key: 'showSosHighlight', label: 'Show SOS Highlight', type: 'toggle', defaultValue: true },
+]
+
+const sosTemplate: GameTemplate = {
+  slug: 'sos',
+  title: 'SOS',
+  description: 'Classic paper-and-pencil game. Place S and O to spell SOS and score. First to target points wins!',
+  icon: '🆘',
+  category: 'two-player',
+  componentKey: 'sos',
+  configSchema: sosSchema,
+  defaultConfig: sosSchema.reduce((acc, f) => ({ ...acc, [f.key]: f.defaultValue }), {}),
+}
+
 export const TEMPLATES: GameTemplate[] = [
   snakeTemplate,
   memoryTemplate,
@@ -191,6 +223,7 @@ export const TEMPLATES: GameTemplate[] = [
   hangmanTemplate,
   typingTemplate,
   game2048Template,
+  sosTemplate,
 ]
 
 export const CATEGORIES = [

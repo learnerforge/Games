@@ -10,6 +10,7 @@ import ConnectFour from './ConnectFour'
 import RockPaperScissors from './RockPaperScissors'
 import Hangman from './Hangman'
 import TypingTest from './TypingTest'
+import SOS from './SOS'
 
 const componentMap: GameComponentMap = {
   snake: Snake,
@@ -22,6 +23,7 @@ const componentMap: GameComponentMap = {
   rockpaperscissors: RockPaperScissors,
   hangman: Hangman,
   typingtest: TypingTest,
+  sos: SOS,
 }
 
 export function getGameComponent(key: string): ComponentType<{ config: Record<string, unknown>; onScore?: (score: number) => void }> | null {
