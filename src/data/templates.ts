@@ -1,6 +1,7 @@
 import type { GameTemplate, ConfigField } from '../types'
 
 const snakeSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Classic Snake' },
   { key: 'speed', label: 'Speed', type: 'slider', defaultValue: 150, min: 60, max: 300, step: 10, description: 'Lower = faster' },
   { key: 'gridSize', label: 'Grid Size', type: 'select', defaultValue: 20, options: [{ label: '15×15', value: 15 }, { label: '20×20', value: 20 }, { label: '25×25', value: 25 }] },
   { key: 'snakeColor', label: 'Snake Color', type: 'color', defaultValue: '#6366f1' },
