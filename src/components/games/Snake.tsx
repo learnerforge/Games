@@ -177,13 +177,14 @@ export default function Snake({ config: rawConfig, onScore }: Props) {
     return () => { if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null } }
   }, [started, paused, gameOver, cfg.speed, gameTick])
 
+  const drawRef = useRef(draw)
+  drawRef.current = draw
+
   useEffect(() => {
-    if (!animRef.current) {
-      const loop = () => { draw(); animRef.current = requestAnimationFrame(loop) }
-      animRef.current = requestAnimationFrame(loop)
-    }
+    const loop = () => { drawRef.current(); animRef.current = requestAnimationFrame(loop) }
+    animRef.current = requestAnimationFrame(loop)
     return () => { if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = 0 } }
-  }, [draw])
+  }, [])
 
   const startGame = useCallback(() => {
     stateRef.current = createInitialState(cfg.gridSize)
@@ -194,8 +195,8 @@ export default function Snake({ config: rawConfig, onScore }: Props) {
     setFoodEaten(0)
     foodRef.current = 0
     scoreSubmittedRef.current = false
-    draw()
-  }, [cfg.gridSize, draw])
+    drawRef.current()
+  }, [cfg.gridSize])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
