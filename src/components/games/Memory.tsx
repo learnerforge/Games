@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useGame } from '../../context/GameContext'
 import { loadData } from '../../utils/storage'
+import type { ScoreEntry } from '../../types'
 
 const EMOJIS = ['🍎','🍊','🍋','🍇','🍓','🍑','🍒','🥝','🍌','🍍','🥭','🫐','🍈','🥥','🍅','🥑','🌽','🥕']
 const ANIMALS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦']
@@ -18,24 +19,34 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 interface MemoryConfig {
+  title: string
   gridCols: number
   gridRows: number
   timerEnabled: boolean
   cardSet: string
 }
 
-export default function Memory({ config: rawConfig }: { config: Record<string, unknown> }) {
-  const config = {
-    gridCols: Number(rawConfig.gridCols) || 4,
-    gridRows: Number(rawConfig.gridRows) || 4,
-    timerEnabled: rawConfig.timerEnabled !== false,
-    cardSet: String(rawConfig.cardSet || 'emoji'),
-  } satisfies MemoryConfig
+interface Props {
+  config: Record<string, unknown>
+  onScore?: (score: number) => void
+}
 
+function parseConfig(raw: Record<string, unknown>): MemoryConfig {
+  return {
+    title: String(raw.title || 'Memory'),
+    gridCols: Math.min(6, Math.max(2, Number(raw.gridCols) || 4)),
+    gridRows: Math.min(6, Math.max(2, Number(raw.gridRows) || 4)),
+    timerEnabled: raw.timerEnabled !== false,
+    cardSet: ['emoji', 'animals', 'numbers'].includes(String(raw.cardSet)) ? String(raw.cardSet) : 'emoji',
+  }
+}
+
+export default function Memory({ config: rawConfig, onScore }: Props) {
+  const cfg = parseConfig(rawConfig)
   const { addScore } = useGame()
-  const totalCards = config.gridCols * config.gridRows
+  const totalCards = cfg.gridCols * cfg.gridRows
   const pairs = Math.floor(totalCards / 2)
-  const cardSet = CARD_SETS[config.cardSet] || EMOJIS
+  const cardSet = CARD_SETS[cfg.cardSet] || EMOJIS
 
   const [cards, setCards] = useState<{ value: string; flipped: boolean; matched: boolean }[]>([])
   const [flipped, setFlipped] = useState<number[]>([])
@@ -44,6 +55,7 @@ export default function Memory({ config: rawConfig }: { config: Record<string, u
   const [locked, setLocked] = useState(false)
   const [gameOver, setGameOver] = useState(false)
   const [timer, setTimer] = useState(0)
+  const scoreSubmitted = useRef(false)
 
   const initGame = useCallback(() => {
     const selected = shuffle(cardSet).slice(0, pairs)
@@ -61,10 +73,10 @@ export default function Memory({ config: rawConfig }: { config: Record<string, u
   useEffect(() => { initGame() }, [initGame])
 
   useEffect(() => {
-    if (gameOver || !config.timerEnabled) return
+    if (gameOver || !cfg.timerEnabled) return
     const id = setInterval(() => setTimer(t => t + 1), 1000)
     return () => clearInterval(id)
-  }, [gameOver, config.timerEnabled])
+  }, [gameOver, cfg.timerEnabled])
 
   const handleFlip = useCallback((i: number) => {
     if (locked || cards[i]?.flipped || cards[i]?.matched || gameOver) return
@@ -86,8 +98,19 @@ export default function Memory({ config: rawConfig }: { config: Record<string, u
       setLocked(false)
       if (newMatched >= pairs) {
         setGameOver(true)
-        const finalScore = Math.max(1, Math.floor((1000 - moves * 10) / (timer + 1)))
-        addScore('memory', { player: loadData().playerName, score: finalScore, date: new Date().toISOString(), mode: '1p' })
+        if (!scoreSubmitted.current) {
+          scoreSubmitted.current = true
+          const finalScore = Math.max(1, Math.floor((1000 - moves * 10) / (timer + 1)))
+          const entry: ScoreEntry = {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            gameSlug: 'memory', gameTitle: cfg.title,
+            playerName: loadData().playerName,
+            score: finalScore, moves, gridSize: cfg.gridCols, targetNumber: 0,
+            createdAt: new Date().toISOString(),
+          }
+          onScore?.(finalScore)
+          addScore('memory', { player: entry.playerName, score: finalScore, date: entry.createdAt, mode: '1p' })
+        }
       }
     } else {
       setTimeout(() => {
@@ -96,42 +119,68 @@ export default function Memory({ config: rawConfig }: { config: Record<string, u
         setLocked(false)
       }, 800)
     }
-  }, [flipped, cards, matched, pairs, moves, timer, addScore])
+  }, [flipped, cards, matched, pairs, moves, timer, cfg.title, cfg.gridCols, onScore, addScore])
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4 text-sm text-theme-text-secondary">
-        <span>Moves: {moves}</span>
-        {config.timerEnabled && <span>Time: {timer}s</span>}
-        {gameOver && <span className="text-theme-success font-semibold">Complete!</span>}
-        <button onClick={initGame} className="touch-button px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text hover:border-theme-primary transition-colors">Restart</button>
+    <div className="w-full max-w-md mx-auto select-none">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-lg font-bold text-theme-text">{cfg.title}</h2>
+          <p className="text-xs text-theme-text-secondary">{cfg.gridCols}×{cfg.gridRows} · {cfg.cardSet}</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="text-center bg-theme-bg-secondary rounded-lg px-3 py-1 min-w-[50px]">
+            <div className="text-[10px] text-theme-text-secondary uppercase">Moves</div>
+            <div className="text-sm font-bold text-theme-text">{moves}</div>
+          </div>
+          {cfg.timerEnabled && (
+            <div className="text-center bg-theme-bg-secondary rounded-lg px-3 py-1 min-w-[50px]">
+              <div className="text-[10px] text-theme-text-secondary uppercase">Time</div>
+              <div className="text-sm font-bold text-theme-text">{timer}s</div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {gameOver && (
-        <div className="text-center mb-4">
-          <p className="text-lg font-semibold text-theme-success">All matched!</p>
-          <p className="text-sm text-theme-text-secondary">{moves} moves in {timer}s</p>
-        </div>
-      )}
-
-      <div
-        className="grid gap-2 max-w-md mx-auto"
-        style={{ gridTemplateColumns: `repeat(${config.gridCols}, 1fr)` }}
-      >
+      {/* Board */}
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cfg.gridCols}, 1fr)` }}>
         {cards.map((card, i) => (
           <button
             key={i}
             onClick={() => handleFlip(i)}
-            className={`touch-button aspect-square rounded-lg text-lg transition-all ${
+            className={`touch-button aspect-square rounded-xl text-lg transition-all ${
               card.flipped || card.matched
                 ? 'bg-theme-primary/10 text-theme-primary border border-theme-primary/30'
                 : 'bg-theme-bg-secondary border border-theme-border hover:border-theme-primary'
-            } ${card.matched ? 'opacity-50' : ''}`}
+            } ${card.matched ? 'opacity-40' : ''}`}
           >
-            {card.flipped || card.matched ? card.value : '?'}
+            {card.flipped || card.matched ? card.value : '❓'}
           </button>
         ))}
       </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between mt-3">
+        <button onClick={initGame} className="touch-button px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-xs hover:border-theme-primary transition-colors">
+          ↻ Restart
+        </button>
+        <span className="text-xs text-theme-text-secondary">{matched}/{pairs} pairs</span>
+      </div>
+
+      {/* Game over overlay */}
+      {gameOver && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-20 backdrop-blur-sm">
+          <div className="bg-theme-bg-card border border-theme-border rounded-2xl p-8 text-center max-w-sm w-full mx-4 shadow-2xl">
+            <p className="text-4xl mb-2">🎉</p>
+            <p className="text-xl font-bold text-theme-text mb-1">All Matched!</p>
+            <p className="text-sm text-theme-text-secondary mb-4">{moves} moves in {timer}s</p>
+            <button onClick={initGame} className="touch-button px-6 py-2.5 rounded-lg bg-theme-primary text-white text-sm font-medium hover:bg-theme-primary-hover transition-colors">
+              Play Again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

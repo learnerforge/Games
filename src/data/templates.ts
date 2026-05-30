@@ -10,6 +10,7 @@ const snakeSchema: ConfigField[] = [
 ]
 
 const memorySchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Memory Match' },
   { key: 'gridCols', label: 'Columns', type: 'select', defaultValue: 4, options: [{ label: '4', value: 4 }, { label: '6', value: 6 }] },
   { key: 'gridRows', label: 'Rows', type: 'select', defaultValue: 4, options: [{ label: '4', value: 4 }, { label: '6', value: 6 }] },
   { key: 'timerEnabled', label: 'Show Timer', type: 'toggle', defaultValue: true },
@@ -17,18 +18,17 @@ const memorySchema: ConfigField[] = [
 ]
 
 const quizSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Quiz Battle' },
   { key: 'questionCount', label: 'Questions', type: 'slider', defaultValue: 10, min: 5, max: 25, step: 1 },
   { key: 'timePerQuestion', label: 'Time per Question (s)', type: 'slider', defaultValue: 0, min: 0, max: 30, step: 5, description: '0 = no timer' },
   { key: 'category', label: 'Category', type: 'select', defaultValue: 'general', options: [{ label: 'General Knowledge', value: 'general' }, { label: 'Science', value: 'science' }, { label: 'Mixed', value: 'mixed' }] },
 ]
 
 const pongSchema: ConfigField[] = [
-  { key: 'ballSpeed', label: 'Ball Speed', type: 'slider', defaultValue: 4, min: 2, max: 8, step: 1 },
-  { key: 'paddleSize', label: 'Paddle Size', type: 'slider', defaultValue: 60, min: 30, max: 120, step: 5 },
-  { key: 'aiDifficulty', label: 'AI Difficulty', type: 'select', defaultValue: 'medium', options: [{ label: 'Easy', value: 'easy' }, { label: 'Medium', value: 'medium' }, { label: 'Hard', value: 'hard' }] },
-  { key: 'winScore', label: 'Winning Score', type: 'slider', defaultValue: 5, min: 3, max: 15, step: 1 },
-  { key: 'paddleColor', label: 'Paddle Color', type: 'color', defaultValue: '#6366f1' },
-  { key: 'ballColor', label: 'Ball Color', type: 'color', defaultValue: '#f1f5f9' },
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Pong' },
+  { key: 'scoreToWin', label: 'Score to Win', type: 'select', defaultValue: 5, options: [{ label: '3', value: 3 }, { label: '5', value: 5 }, { label: '7', value: 7 }, { label: '11', value: 11 }] },
+  { key: 'speed', label: 'Speed', type: 'select', defaultValue: 4, options: [{ label: 'Slow', value: 2 }, { label: 'Normal', value: 4 }, { label: 'Fast', value: 6 }, { label: 'Insane', value: 8 }] },
+  { key: 'color', label: 'Paddle 2 Color', type: 'color', defaultValue: '#3b82f6' },
 ]
 
 const tttSchema: ConfigField[] = [
@@ -39,22 +39,26 @@ const tttSchema: ConfigField[] = [
 ]
 
 const cfSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Connect Four' },
   { key: 'rows', label: 'Rows', type: 'select', defaultValue: 6, options: [{ label: '6', value: 6 }, { label: '7', value: 7 }, { label: '8', value: 8 }] },
   { key: 'cols', label: 'Columns', type: 'select', defaultValue: 7, options: [{ label: '7', value: 7 }, { label: '8', value: 8 }, { label: '9', value: 9 }] },
   { key: 'winLength', label: 'Win Length', type: 'select', defaultValue: 4, options: [{ label: '3', value: 3 }, { label: '4', value: 4 }, { label: '5', value: 5 }] },
 ]
 
 const rpsSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Rock Paper Scissors' },
   { key: 'roundsToWin', label: 'Rounds to Win', type: 'slider', defaultValue: 3, min: 1, max: 7, step: 1 },
   { key: 'choiceStyle', label: 'Choice Style', type: 'select', defaultValue: 'emoji', options: [{ label: 'Emoji', value: 'emoji' }, { label: 'Text', value: 'text' }] },
 ]
 
 const hangmanSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Hangman' },
   { key: 'maxWrong', label: 'Max Wrong Guesses', type: 'slider', defaultValue: 6, min: 3, max: 10, step: 1 },
-  { key: 'wordTheme', label: 'Word Theme', type: 'select', defaultValue: 'mixed', options: [{ label: 'Mixed', value: 'mixed' }, { label: 'Tech', value: 'tech' }, { label: 'Animals', value: 'animals' }] },
+  { key: 'theme', label: 'Word Theme', type: 'select', defaultValue: 'mixed', options: [{ label: 'Mixed', value: 'mixed' }, { label: 'Tech', value: 'tech' }, { label: 'Animals', value: 'animals' }, { label: 'Fruits', value: 'fruits' }, { label: 'Sports', value: 'sports' }] },
 ]
 
 const typingSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Typing Speed Test' },
   { key: 'duration', label: 'Duration (s)', type: 'slider', defaultValue: 30, min: 15, max: 120, step: 15 },
   { key: 'wordLength', label: 'Word Length', type: 'select', defaultValue: 'mixed', options: [{ label: 'Short', value: 'short' }, { label: 'Medium', value: 'medium' }, { label: 'Mixed', value: 'mixed' }] },
 ]
