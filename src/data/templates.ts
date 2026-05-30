@@ -32,6 +32,7 @@ const pongSchema: ConfigField[] = [
 ]
 
 const tttSchema: ConfigField[] = [
+  { key: 'title', label: 'Game Title', type: 'text', defaultValue: 'Classic Tic Tac Toe' },
   { key: 'boardSize', label: 'Board Size', type: 'select', defaultValue: 3, options: [{ label: '3×3', value: 3 }, { label: '4×4', value: 4 }, { label: '5×5', value: 5 }] },
   { key: 'aiDifficulty', label: 'AI Difficulty', type: 'select', defaultValue: 'medium', options: [{ label: 'Easy (random)', value: 'easy' }, { label: 'Medium (minimax)', value: 'medium' }] },
   { key: 'playerMark', label: 'Player Mark', type: 'select', defaultValue: 'X', options: [{ label: 'X', value: 'X' }, { label: 'O', value: 'O' }, { label: '★', value: '★' }, { label: '●', value: '●' }] },

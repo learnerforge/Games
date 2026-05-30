@@ -1,174 +1,264 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import {
+  createEmptyBoard, checkWinner, getAIMove, getWinLines,
+  type Board, type Player,
+} from '../../utils/gameTicTacToe'
+import type { ScoreEntry } from '../../types'
 import { useGame } from '../../context/GameContext'
 import { loadData } from '../../utils/storage'
 
-type Player = 'X' | 'O'
-type Board = (Player | null)[]
-
-function checkWinner(board: Board): Player | 'draw' | null {
-  const lines = [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6],
-  ]
-  for (const [a,b,c] of lines) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a]
-  }
-  if (board.every(c => c !== null)) return 'draw'
-  return null
+interface TTTConfig {
+  title: string
+  boardSize: number
+  aiDifficulty: string
+  playerMark: string
 }
 
-function minimax(board: Board, depth: number, isMax: boolean): number {
-  const result = checkWinner(board)
-  if (result === 'O') return 10 - depth
-  if (result === 'X') return depth - 10
-  if (result === 'draw') return 0
+interface Props {
+  config: Record<string, unknown>
+  onScore?: (score: number) => void
+}
 
-  if (isMax) {
-    let best = -Infinity
-    for (let i = 0; i < 9; i++) {
-      if (!board[i]) {
-        board[i] = 'O'
-        best = Math.max(best, minimax(board, depth + 1, false))
-        board[i] = null
-      }
-    }
-    return best
-  } else {
-    let best = Infinity
-    for (let i = 0; i < 9; i++) {
-      if (!board[i]) {
-        board[i] = 'X'
-        best = Math.min(best, minimax(board, depth + 1, true))
-        board[i] = null
-      }
-    }
-    return best
+function parseConfig(raw: Record<string, unknown>): TTTConfig {
+  return {
+    title: String(raw.title || 'Tic Tac Toe'),
+    boardSize: [3, 4, 5].includes(Number(raw.boardSize)) ? Number(raw.boardSize) : 3,
+    aiDifficulty: raw.aiDifficulty === 'easy' ? 'easy' : 'medium',
+    playerMark: ['X', 'O', '★', '●'].includes(String(raw.playerMark)) ? String(raw.playerMark) : 'X',
   }
 }
 
-function getAIMove(board: Board): number {
-  let bestScore = -Infinity
-  let bestMove = -1
-  for (let i = 0; i < 9; i++) {
-    if (!board[i]) {
-      board[i] = 'O'
-      const score = minimax(board, 0, false)
-      board[i] = null
-      if (score > bestScore) {
-        bestScore = score
-        bestMove = i
-      }
-    }
-  }
-  return bestMove
-}
+const AI_MARK: Player = 'O'
 
-export default function TicTacToe() {
+export default function TicTacToe({ config: rawConfig, onScore }: Props) {
+  const cfg = parseConfig(rawConfig)
   const { addScore } = useGame()
-  const [board, setBoard] = useState<Board>(Array(9).fill(null))
+  const size = cfg.boardSize
+  const playerMark = cfg.playerMark as string
+
+  const [board, setBoard] = useState<Board>(() => createEmptyBoard(size))
   const [turn, setTurn] = useState<Player>('X')
   const [winner, setWinner] = useState<Player | 'draw' | null>(null)
   const [mode, setMode] = useState<'1p' | '2p' | null>(null)
-  const [score, setScore] = useState(0)
+  const [moves, setMoves] = useState(0)
+  const [xScore, setXScore] = useState(0)
+  const [oScore, setOScore] = useState(0)
+  const scoreSubmittedRef = useRef(false)
+  const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const isBoardFull = board.every(c => c !== null)
+
+  const submitScore = useCallback((result: Player | 'draw') => {
+    if (scoreSubmittedRef.current) return
+    scoreSubmittedRef.current = true
+    const pts = result === 'X' ? 10 : result === 'O' ? 5 : 0
+    const entry: ScoreEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      gameSlug: 'tictactoe',
+      gameTitle: cfg.title,
+      playerName: loadData().playerName,
+      score: pts,
+      moves,
+      gridSize: cfg.boardSize,
+      targetNumber: 0,
+      createdAt: new Date().toISOString(),
+    }
+    onScore?.(pts)
+    addScore('tictactoe', { player: entry.playerName, score: pts, date: entry.createdAt, mode: mode! })
+  }, [cfg.title, cfg.boardSize, moves, mode, onScore, addScore])
 
   const handleMove = useCallback((i: number) => {
-    if (board[i] || winner) return
-    if (mode === '1p' && turn === 'O') return
+    if (board[i] || winner || isBoardFull) return
+    if (mode === '1p' && turn === AI_MARK) return
 
-    const newBoard = [...board]
+    const newBoard = [...board] as Board
     newBoard[i] = turn
     setBoard(newBoard)
+    setMoves(m => m + 1)
 
-    const result = checkWinner(newBoard)
+    const result = checkWinner(newBoard, size)
     if (result) {
-      if (result === 'draw') {
-        setWinner('draw')
-      } else {
-        setWinner(result)
-        const pts = result === 'X' ? 10 : 5
-        setScore(pts)
-        addScore('tictactoe', { player: loadData().playerName, score: pts, date: new Date().toISOString(), mode: mode! })
-      }
+      setWinner(result)
+      if (result === 'X') setXScore(s => s + 1)
+      else if (result === 'O') setOScore(s => s + 1)
+      submitScore(result)
       return
     }
 
     const nextTurn = turn === 'X' ? 'O' : 'X'
     setTurn(nextTurn)
+  }, [board, turn, winner, isBoardFull, mode, size, playerMark, submitScore])
 
-    if (mode === '1p' && nextTurn === 'O') {
-      setTimeout(() => {
-        setBoard(prev => {
-          const aiMove = getAIMove(prev)
-          if (aiMove === -1) return prev
-          const b = [...prev]
-          b[aiMove] = 'O'
-          const r = checkWinner(b)
-          if (r === 'O') {
-            setWinner('O')
-            setScore(-5)
-            addScore('tictactoe', { player: loadData().playerName, score: -5, date: new Date().toISOString(), mode: '1p' })
-          } else if (r === 'draw') {
-            setWinner('draw')
-          } else {
-            setTurn('X')
-          }
-          return b
-        })
-      }, 300)
+  useEffect(() => {
+    if (mode !== '1p' || turn !== AI_MARK || winner || isBoardFull) return
+
+    aiTimeoutRef.current = setTimeout(() => {
+      setBoard(prev => {
+        const aiMove = getAIMove(prev, size, cfg.aiDifficulty, AI_MARK)
+        if (aiMove === -1) return prev
+        const b = [...prev] as Board
+        b[aiMove] = AI_MARK
+        const r = checkWinner(b, size)
+        if (r) {
+          setWinner(r)
+          if (r === 'X') setXScore(s => s + 1)
+          else if (r === 'O') setOScore(s => s + 1)
+          submitScore(r)
+        } else {
+          setTurn('X')
+        }
+        setMoves(m => m + 1)
+        return b
+      })
+    }, 300)
+
+    return () => {
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current)
     }
-  }, [board, turn, winner, mode, addScore])
+  }, [mode, turn, winner, isBoardFull, size, cfg.aiDifficulty, submitScore])
 
-  const restart = () => {
-    setBoard(Array(9).fill(null))
+  const restart = useCallback(() => {
+    setBoard(createEmptyBoard(size))
     setTurn('X')
     setWinner(null)
-    setScore(0)
-  }
+    setMoves(0)
+    scoreSubmittedRef.current = false
+    setXScore(0)
+    setOScore(0)
+  }, [size])
+
+  const cellPx = size <= 3 ? 80 : size <= 4 ? 64 : 52
+  const gap = 2
+  const boardPx = size * cellPx + (size + 1) * gap
+
+  const winLines = winner && winner !== 'draw'
+    ? getWinLines(size).filter(line => line.every(i => board[i] === winner))
+    : []
 
   if (!mode) {
     return (
-      <div className="text-center py-8">
-        <p className="text-theme-text-secondary mb-4">Select mode:</p>
-        <div className="flex gap-3 justify-center">
-          <button onClick={() => setMode('1p')} className="touch-button px-6 py-3 rounded-lg bg-theme-primary text-white font-medium hover:bg-theme-primary-hover transition-colors">vs AI</button>
-          <button onClick={() => setMode('2p')} className="touch-button px-6 py-3 rounded-lg bg-theme-primary text-white font-medium hover:bg-theme-primary-hover transition-colors">2 Players</button>
+      <div className="flex flex-col items-center py-8">
+        <p className="text-theme-text-secondary mb-4 text-sm">Choose a mode to start:</p>
+        <div className="flex gap-3">
+          <button onClick={() => setMode('1p')} className="touch-button px-6 py-3 rounded-xl bg-theme-primary text-white font-medium hover:bg-theme-primary-hover transition-colors shadow-lg">
+            🤖 vs AI
+          </button>
+          <button onClick={() => setMode('2p')} className="touch-button px-6 py-3 rounded-xl bg-theme-primary text-white font-medium hover:bg-theme-primary-hover transition-colors shadow-lg">
+            👥 2 Players
+          </button>
         </div>
+        <p className="mt-4 text-[10px] text-theme-text-secondary/60">
+          {cfg.boardSize}×{cfg.boardSize} · {cfg.aiDifficulty === 'easy' ? 'Easy AI' : 'Medium AI'}
+        </p>
       </div>
     )
   }
 
-  const status = winner
-    ? winner === 'draw' ? 'Draw!' : `${winner} Wins!`
-    : `${turn}'s turn`
+  const displayMark = (internal: 'X' | 'O') =>
+    mode === '2p' ? internal : internal === 'X' ? playerMark : 'O'
+
+  const isGameOver = winner !== null || isBoardFull
+  let statusText: string
+  if (winner === 'draw') statusText = "It's a Draw!"
+  else if (winner) statusText = `${displayMark(winner)} Wins!`
+  else statusText = `${displayMark(turn)}'s turn`
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-theme-text-secondary">
-          {mode === '1p' ? 'vs AI' : '2 Players'} · Score: {score}
+    <div className="flex flex-col items-center w-full max-w-[500px] mx-auto select-none">
+      {/* Header */}
+      <div className="w-full flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-lg font-bold text-theme-text">{cfg.title}</h2>
+          <p className="text-xs text-theme-text-secondary">{cfg.boardSize}×{cfg.boardSize} · {mode === '1p' ? 'vs AI' : '2 Players'}</p>
         </div>
-        <button onClick={restart} className="touch-button px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-sm hover:border-theme-primary transition-colors">
-          Restart
-        </button>
+        <div className="flex gap-2">
+          <div className={`text-center rounded-lg px-3 py-1 min-w-[60px] ${turn === 'X' && !isGameOver ? 'ring-2 ring-theme-primary' : ''}`}
+            style={{ background: `${turn === 'X' && !isGameOver ? '#6366f122' : 'transparent'}` }}>
+            <div className="text-[10px] text-theme-text-secondary uppercase">X</div>
+            <div className="text-sm font-bold text-theme-text">{xScore}</div>
+          </div>
+          <div className={`text-center rounded-lg px-3 py-1 min-w-[60px] ${turn === 'O' && !isGameOver ? 'ring-2 ring-theme-primary' : ''}`}
+            style={{ background: `${turn === 'O' && !isGameOver ? '#6366f122' : 'transparent'}` }}>
+            <div className="text-[10px] text-theme-text-secondary uppercase">O</div>
+            <div className="text-sm font-bold text-theme-text">{oScore}</div>
+          </div>
+        </div>
       </div>
-      <div className="text-center mb-4 text-base font-semibold text-theme-text">{status}</div>
-      <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
-        {board.map((cell, i) => (
-          <button
-            key={i}
-            onClick={() => handleMove(i)}
-            className={`touch-button aspect-square rounded-lg text-2xl font-bold transition-all ${
-              cell
-                ? 'bg-theme-primary/10 text-theme-primary'
-                : 'bg-theme-bg-secondary border border-theme-border hover:border-theme-primary'
-            } ${winner ? 'cursor-default' : ''}`}
-            disabled={!!winner || (mode === '1p' && turn === 'O')}
-          >
-            {cell}
+
+      {/* Status */}
+      <div className="text-sm font-semibold text-theme-text mb-3">{statusText}</div>
+
+      {/* Board */}
+      <div
+        className="relative rounded-xl p-[2px] overflow-hidden"
+        style={{ width: boardPx, height: boardPx, background: '#94a3b8' }}
+      >
+        <div
+          className="absolute inset-[2px] grid"
+          style={{ gridTemplateColumns: `repeat(${size}, 1fr)`, gap: `${gap}px` }}
+        >
+          {board.map((cell, i) => {
+            const isWinning = winLines.some(line => line.includes(i))
+            return (
+              <div
+                key={i}
+                onClick={() => handleMove(i)}
+                className="flex items-center justify-center rounded-md cursor-pointer font-bold transition-all duration-150 touch-button"
+                style={{
+                  background: cell ? '#1e293b' : '#334155',
+                  color: isWinning ? '#fbbf24' : cell === 'X' ? '#818cf8' : '#f87171',
+                  fontSize: cellPx >= 64 ? '28px' : cellPx >= 52 ? '22px' : '18px',
+                  opacity: cell || isGameOver ? 1 : 0.7,
+                  boxShadow: isWinning ? 'inset 0 0 12px rgba(251,191,36,0.4)' : 'none',
+                }}
+              >
+                {cell ? displayMark(cell) : ''}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Game over overlay */}
+        {isGameOver && (
+          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center rounded-xl backdrop-blur-sm z-10">
+            <p className="text-2xl font-bold text-white mb-1">
+              {winner === 'draw' ? "It's a Draw!" : `${winner ? displayMark(winner) : ''} Wins!`}
+            </p>
+            <p className="text-sm text-white/70 mb-3">Moves: {moves}</p>
+            <button onClick={restart} className="touch-button px-5 py-2 rounded-lg bg-theme-primary text-white text-sm font-medium hover:bg-theme-primary-hover transition-colors">
+              Play Again
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Controls */}
+      <div className="w-full flex items-center justify-between mt-3">
+        <div className="flex gap-2">
+          <button onClick={restart} className="touch-button px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-xs hover:border-theme-primary transition-colors">
+            ↻ Restart
           </button>
-        ))}
+          <button onClick={() => { setMode(null); restart() }} className="touch-button px-3 py-1.5 rounded-lg bg-theme-bg-secondary border border-theme-border text-theme-text text-xs hover:border-theme-primary transition-colors">
+            ← Mode
+          </button>
+        </div>
+        <div className="text-xs text-theme-text-secondary">
+          Moves: {moves}
+        </div>
       </div>
+
+      <div className="mt-2 text-[10px] text-theme-text-secondary/60">
+        Click a cell to place your mark
+      </div>
+
+      <style>{`
+        @keyframes ttt-pop {
+          0% { transform: scale(0.5); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }
+
+
